@@ -1,9 +1,21 @@
-"use client"; // Required for form interactivity
+ "use client";
 
 import { useState } from "react";
+import emailjs from "@emailjs/browser";
 
 export default function JoinPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    faculty: "",
+    batch: "",
+    semester: "",
+    reason: "",
+  });
 
   const faculties = [
     "Faculty of Agriculture",
@@ -13,25 +25,51 @@ export default function JoinPage() {
     "Faculty of Engineering",
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    // Future option: send form data to email or Google Form
-    // Example: create a fetch POST request to an API or Google Form endpoint
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        {
+          full_name: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
+          faculty: formData.faculty,
+          batch: formData.batch,
+          semester: formData.semester,
+          reason: formData.reason || "N/A",
+        },
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
+      );
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error("EmailJS error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="min-h-screen bg-white text-neutral-900">
       <section className="mx-auto max-w-2xl px-4 py-16">
-        {/* Page Title */}
         <h1 className="text-4xl font-bold text-center">Membership Request Form</h1>
         <p className="mt-2 text-center text-gray-700">
           Fill out the form below to request membership in EELC. We will contact you offline
           for further procedure.
         </p>
 
-        {/* Success message */}
         {submitted ? (
           <div className="mt-8 text-center p-6 bg-green-100 text-green-800 rounded-xl">
             Thank you for submitting your request! Our team will reach out to you soon.
@@ -39,101 +77,93 @@ export default function JoinPage() {
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             {/* Full Name */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Full Name *</label>
-              <input
-                type="text"
-                required
-                placeholder="Your full name"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            <input
+              name="full_name"
+              required
+              placeholder="Your full name"
+              value={formData.full_name}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            />
 
             {/* Email */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Email *</label>
-              <input
-                type="email"
-                required
-                placeholder="example@email.com"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            <input
+              type="email"
+              name="email"
+              required
+              placeholder="example@email.com"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            />
 
-            {/* Phone Number */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Phone Number *</label>
-              <input
-                type="tel"
-                required
-                placeholder="+880 1XXXXXXXXX"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            {/* Phone */}
+            <input
+              name="phone"
+              required
+              placeholder="+880 1XXXXXXXXX"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            />
 
             {/* Faculty */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Faculty *</label>
-              <select
-                required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Select your Faculty
+            <select
+              name="faculty"
+              required
+              value={formData.faculty}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            >
+              <option value="">Select your Faculty</option>
+              {faculties.map((f) => (
+                <option key={f} value={f}>
+                  {f}
                 </option>
-                {faculties.map((faculty, index) => (
-                  <option key={index} value={faculty}>
-                    {faculty}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </select>
 
             {/* Batch */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Batch *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g., 24"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            <input
+              name="batch"
+              required
+              placeholder="e.g., 24"
+              value={formData.batch}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            />
 
             {/* Semester */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Semester *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g., Spring 2026"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            <input
+              name="semester"
+              required
+              placeholder="e.g., Spring 2026"
+              value={formData.semester}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            />
 
-            {/* Reason to join */}
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Why do you want to join?</label>
-              <textarea
-                placeholder="Optional"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={4}
-              ></textarea>
-            </div>
+            {/* Reason */}
+            <textarea
+              name="reason"
+              placeholder="Optional"
+              rows={4}
+              value={formData.reason}
+              onChange={handleChange}
+              className="w-full rounded-lg border px-4 py-2"
+            />
 
-            {/* Submit Button */}
-            <div className="text-center">
-              <button
-                type="submit"
-                className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition"
-              >
-                Submit Request
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-blue-600 py-3 text-white font-semibold hover:bg-blue-700"
+            >
+              {loading ? "Submitting..." : "Submit Request"}
+            </button>
           </form>
         )}
       </section>
     </main>
   );
 }
+ 
