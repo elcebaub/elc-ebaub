@@ -1,14 +1,35 @@
- "use client";
+"use client";
 
 import { useState } from "react";
+import emailjs from "@emailjs/browser";
 
 export default function ContactPage() {
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
-    // Currently offline: later you can connect this to email, API, or Google Form
+    setLoading(true);
+    setError("");
+
+    const form = e.currentTarget;
+
+    try {
+      await emailjs.sendForm(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+        process.env.NEXT_PUBLIC_EMAILJS_CONTACT_TEMPLATE_ID!,
+        form,
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+      );
+
+      setSubmitted(true);
+      form.reset();
+    } catch (err) {
+      setError("Failed to send message. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,11 +53,16 @@ export default function ContactPage() {
           </p>
           <p>
             Phone (Public Relations Officer):{" "}
-            <a href="tel:+8801859215610" className="text-blue-600 hover:underline">
+            <a
+              href="tel:+8801859215610"
+              className="text-blue-600 hover:underline"
+            >
               01859215610
             </a>
           </p>
-          <p>Address: 69-69/1, Boro Indara Moor, Chapainawabganj, Postcode-6300</p>
+          <p>
+            Address: 69-69/1, Boro Indara Moor, Chapainawabganj, Postcode-6300
+          </p>
           <p>
             Follow us:{" "}
             <a
@@ -59,16 +85,19 @@ export default function ContactPage() {
 
         {/* Contact Form */}
         {submitted ? (
-          <div className="mt-8 text-center p-6 bg-green-100 text-green-800 rounded-xl">
+          <div className="mt-8 rounded-xl bg-green-100 p-6 text-center text-green-800">
             Thank you for contacting us! We will get back to you soon.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Full Name *</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Full Name *
+              </label>
               <input
                 type="text"
+                name="from_name"
                 required
                 placeholder="Your full name"
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -77,9 +106,12 @@ export default function ContactPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Email *</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Email *
+              </label>
               <input
                 type="email"
+                name="reply_to"
                 required
                 placeholder="example@email.com"
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -88,24 +120,32 @@ export default function ContactPage() {
 
             {/* Message */}
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Message *</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Message *
+              </label>
               <textarea
+                name="message"
                 required
-                placeholder="Write your message here..."
                 rows={4}
+                placeholder="Write your message here..."
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              ></textarea>
+              />
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <div className="text-center">
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition"
+                disabled={loading}
+                className="rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-50"
               >
-                Send Message
+                {loading ? "Sending..." : "Send Message"}
               </button>
             </div>
+
+            {error && (
+              <p className="text-center text-sm text-red-600">{error}</p>
+            )}
           </form>
         )}
       </section>
